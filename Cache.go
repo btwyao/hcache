@@ -46,14 +46,13 @@ type HCache struct {
 	cache  *cache.Cache
 }
 
-func (c *HCache) getWithoutRefresh(k string) (*HCacheItem, bool) {
+func (c *HCache) Get(k string) (interface{}, bool) {
 	data, ok := c.cache.Get(k)
 	if ok {
 		item := data.(*HCacheItem)
 		if time.Now().UnixMilli() <= item.tRefresh {
-			return item, true
+			return item.obj, true
 		}
-		return item, false
 	}
 	return nil, false
 }
@@ -87,6 +86,10 @@ func (c *HCache) GetOrSetWithHandle(ctx context.Context, k string,
 	item.tRefresh = time.Now().Add(c.config.RefreshWindow).UnixMilli()
 	c.cache.SetDefault(k, item)
 	return x, nil
+}
+
+func (c *HCache) Clean() {
+	c.cache.Flush()
 }
 
 func NewCache(config Config) (*HCache, error) {
